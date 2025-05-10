@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>集装箱货物装配工具</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .container-form, .result {
+            max-width: 900px;
+            margin: 20px auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+        .container-form h2 {
+            text-align: center;
+            font-size: 1.5em;
+        }
+        .container-form input, .container-form select, .container-form button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .container-form button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .container-form button:hover {
+            background-color: #45a049;
+        }
+        .result table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .result th, .result td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        .result th {
+            background-color: #f2f2f2;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 14px;
+            color: #888;
+        }
+
+        /* 集装箱和货物的二维展示 */
+        .container-layout {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .layout-section {
+            width: 30%;
+            position: relative;
+            border: 2px solid black;
+        }
+        .view-title {
+            text-align: center;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+        .cargo-cell {
+            background-color: #ff0000;
+            position: absolute;
+            z-index: 1;
+        }
+        .container-border {
+            border: 2px solid #000;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<h1>集装箱货物装配工具</h1>
+
+<div class="container-form">
+    <h2>输入集装箱和货物信息</h2>
+
+    <!-- 集装箱长度 -->
+    <label for="container-length">集装箱长度 (厘米):</label>
+    <input type="number" id="container-length" value="1194" step="1">
+
+    <!-- 集装箱宽度 -->
+    <label for="container-width">集装箱宽度 (厘米):</label>
+    <input type="number" id="container-width" value="233" step="1">
+
+    <!-- 集装箱高度 -->
+    <label for="container-height">集装箱高度 (厘米):</label>
+    <input type="number" id="container-height" value="270" step="1">
+
+    <!-- 货物尺寸 -->
+    <label for="cargo-length">货物长度 (厘米):</label>
+    <input type="number" id="cargo-length" value="49" step="1">
+
+    <label for="cargo-width">货物宽度 (厘米):</label>
+    <input type="number" id="cargo-width" value="33.5" step="1">
+
+    <label for="cargo-height">货物高度 (厘米):</label>
+    <input type="number" id="cargo-height" value="62.5" step="1">
+
+    <!-- 货物数量 -->
+    <label for="cargo-quantity">货物数量:</label>
+    <input type="number" id="cargo-quantity" value="1000" step="1">
+
+    <button onclick="calculate()">计算装配</button>
+</div>
+
+<div class="result" style="display: none;">
+    <h2>装配结果</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>货物类型</th>
+                <th>装配数量</th>
+                <th>单个货物体积</th>
+                <th>总装配体积</th>
+                <th>剩余空间 (立方米)</th>
+                <th>集装箱利用率</th>
+                <th>剩余空间百分比</th>
+            </tr>
+        </thead>
+        <tbody id="result-table">
+        </tbody>
+    </table>
+
+    <h3>装配方法</h3>
+    <p id="assembly-method"></p>
+    <p id="remaining-space"></p>
+
+    <!-- 集装箱装配的方向视图展示 -->
+    <div class="container-layout" id="container-layout"></div>
+</div>
+
+<script>
+    function calculate() {
+        const containerLength = parseInt(document.getElementById('container-length').value);
+        const containerWidth = parseInt(document.getElementById('container-width').value);
+        const containerHeight = parseInt(document.getElementById('container-height').value);
+        const cargoLength = parseInt(document.getElementById('cargo-length').value);
+        const cargoWidth = parseInt(document.getElementById('cargo-width').value);
+        const cargoHeight = parseInt(document.getElementById('cargo-height').value);
+        const cargoQuantity = parseInt(document.getElementById('cargo-quantity').value);
+
+        const containerVolume = containerLength * containerWidth * containerHeight / 1000000;  // 立方米
+        const cargoVolume = cargoLength * cargoWidth * cargoHeight / 1000000; // 立方米
+
+        const maxFitInLength = Math.floor(containerLength / cargoLength);
+        const maxFitInWidth = Math.floor(containerWidth / cargoWidth);
+        const maxFitInHeight = Math.floor(containerHeight / cargoHeight);
+        const maxFit = maxFitInLength * maxFitInWidth * maxFitInHeight;
+        const fittedQuantity = Math.min(cargoQuantity, maxFit);
+
+        const totalPackedVolume = fittedQuantity * cargoVolume;
+        const remainingVolume = containerVolume - totalPackedVolume;
+
+        const utilizationRate = (totalPackedVolume / containerVolume * 100).toFixed(2);
+        const remainingPercentage = ((remainingVolume / containerVolume) * 100).toFixed(2);
+
+        // 显示结果
+        document.querySelector('.result').style.display = 'block';
+        const resultTable = document.getElementById('result-table');
+        resultTable.innerHTML = `
+            <tr>
+                <td>货物</td>
+                <td>${fittedQuantity}</td>
+                <td>${cargoVolume.toFixed(3)} 立方米</td>
+                <td>${totalPackedVolume.toFixed(3)} 立方米</td>
+                <td>${remainingVolume.toFixed(3)} 立方米</td>
+                <td>${utilizationRate}%</td>
+                <td>${remainingPercentage}%</td>
+            </tr>
+        `;
+
+        const assemblyMethod = `1. 按货物体积排序进行装配，优先装载大体积货物。<br>2. 货物沿集装箱的长度、宽度排列，尽量填满空间。<br>3. 调整货物方向（旋转），以便充分利用垂直空间。<br>4. 尽量减少每个货物之间的空隙，增加装配效率。<br>`;
+        document.getElementById('assembly-method').innerHTML = assemblyMethod;
+
+        const remainingSpaceDesc = `货物装配后，X轴剩余空间：${containerLength - (maxFitInLength * cargoLength)} cm<br>Y轴剩余空间：${containerWidth - (maxFitInWidth * cargoWidth)} cm<br>Z轴剩余空间：${containerHeight - (maxFitInHeight * cargoHeight)} cm<br>`;
+        document.getElementById('remaining-space').innerHTML = remainingSpaceDesc;
+
+        // 展示集装箱布局
+        displayContainerLayout(maxFitInLength, maxFitInWidth, maxFitInHeight, cargoLength, cargoWidth, cargoHeight);
+    }
+
+    // 展示集装箱装配的方向视图
+    function displayContainerLayout(length, width, height, cargoLength, cargoWidth, cargoHeight) {
+        const layoutContainer = document.getElementById('container-layout');
+        layoutContainer.innerHTML = '';  // 清空布局展示
+
+        const directions = ['X-Y', 'X-Z', 'Y-Z'];
+        directions.forEach(direction => {
+            const section = document.createElement('div');
+            section.classList.add('layout-section');
+            const title = document.createElement('div');
+            title.classList.add('view-title');
+            title.innerHTML = direction + ' 视图';
+            section.appendChild(title);
+
+            // 添加集装箱轮廓
+            const containerBorder = document.createElement('div');
+            containerBorder.classList.add('container-border');
+            section.appendChild(containerBorder);
+
+            // 绘制每个方向的布局
+            drawDirectionView(section, direction, length, width, height, cargoLength, cargoWidth, cargoHeight);
+            layoutContainer.appendChild(section);
+        });
+    }
+
+    // 绘制特定方向的布局
+    function drawDirectionView(section, direction, length, width, height, cargoLength, cargoWidth, cargoHeight) {
+        const rows = direction === 'X-Y' ? Math.floor(width / cargoWidth) : (direction === 'X-Z' ? Math.floor(height / cargoHeight) : Math.floor(width / cargoWidth));
+        const cols = direction === 'X-Y' ? Math.floor(length / cargoLength) : (direction === 'X-Z' ? Math.floor(length / cargoLength) : Math.floor(length / cargoLength));
+
+        for (let i = 0; i < rows; i++) {
+            for (let j = 0; j < cols; j++) {
+                const cargoCell = document.createElement('div');
+                cargoCell.classList.add('cargo-cell');
+                cargoCell.style.width = cargoLength + 'px';
+                cargoCell.style.height = cargoWidth + 'px';
+                cargoCell.style.top = i * cargoWidth + 'px';
+                cargoCell.style.left = j * cargoLength + 'px';
+                section.appendChild(cargoCell);
+            }
+        }
+    }
+</script>
+
+</body>
+</html>
